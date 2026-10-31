@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Geoly | Onde seu negócio dá certo</title>
+  <link rel="icon" href="img/favicon.png" type="image/png">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <!-- ===== TOPO ===== -->
+  <nav class="navbar py-3">
+    <div class="container-fluid px-4 px-xl-5 text-start">
+
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <img src="img/pin.png" alt="Logo do Geoly" height="40">
+        <span class="brand-name">Geoly</span>
+      </a>
+
+      <!-- BOTÃO que abre o menu lateral -->
+      <button class="btn-perfil" type="button"
+              data-bs-toggle="offcanvas" data-bs-target="#menuPerfil"
+              aria-controls="menuPerfil" aria-label="Abrir menu do perfil">
+        <span class="avatar">S</span>
+        <span class="d-none d-sm-inline">Meu perfil</span>
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- ===== FRASES (título + busca + exemplos) ===== -->
+  <header class="cabeçalho-topo">
+    <div class="container-fluid px-4 px-xl-5 text-start">
+      <div class="row">
+        <!-- col-lg-8 = mesma largura do mapa logo abaixo -->
+        <div class="col-lg-8">
+
+          <h1 class="display-5 fw-bold">Pergunte onde seu negócio <span class="destaque">dá certo.</span></h1>
+          <p class="lead">Escreva sua dúvida em linguagem simples. O Geoly cruza concorrência e população por bairro e mostra a resposta no mapa.</p>
+
+          <div class="input-group input-group-lg mt-4">
+            <input id="pergunta" type="text" class="form-control"
+                   placeholder="Ex.: onde abrir meu negócio em Ponta Grossa?">
+            <button id="btn-perguntar" type="button" class="btn btn-geoly">Perguntar</button>
+          </div>
+
+          <div id="exemplos" class="d-flex flex-wrap gap-2 mt-3"></div>
+
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== ÁREA PRINCIPAL ===== -->
+  <main class="py-4">
+    <div class="container text-start">
+
+      <!-- 4 botões de área (gerados pelo JS) -->
+      <h2 class="h6 mb-2">Áreas de negócios</h2>
+      <div id="tipos" class="d-flex flex-wrap gap-2 mb-4"></div>
+
+      <section id="filtros-tecnicos" class="filtros-tecnicos mb-4" aria-labelledby="filtros-titulo">
+        <div class="filtros-cabecalho">
+          <div><span class="filtros-selo">ANÁLISE AJUSTÁVEL</span><h2 id="filtros-titulo">Perfil do negócio</h2></div>
+          <p id="filtros-descricao">O perfil altera a adequação de cada bairro ao público e à capacidade de consumo estimada.</p>
+        </div>
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label id="perfil-label" class="form-label" for="perfil-restaurante">Posicionamento / ticket médio</label>
+            <select id="perfil-restaurante" class="form-select">
+              <option value="popular">Popular · até R$ 35</option>
+              <option value="casual" selected>Casual · R$ 36 a R$ 90</option>
+              <option value="premium">Premium · R$ 91 a R$ 180</option>
+              <option value="luxo">Alta gastronomia · acima de R$ 180</option>
+            </select>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label" for="peso-renda"><span id="peso-renda-label">Peso do poder de compra</span> <b id="peso-renda-valor">50%</b></label>
+            <input id="peso-renda" class="form-range" type="range" min="0" max="100" value="50">
+            <div class="range-extremos"><span>Demanda e concorrência</span><span>Aderência ao perfil</span></div>
+          </div>
+          <div class="col-md-3"><div id="resumo-filtro" class="filtro-resumo" aria-live="polite"></div></div>
+        </div>
+        <small class="filtros-nota">Demonstração: poder de compra, perfis e contagens de concorrentes são hipóteses ilustrativas, inclusive nas novas áreas. Valide com dados locais antes de investir.</small>
+      </section>
+
+      <div class="row g-4">
+
+        <!-- COLUNA ESQUERDA: mapa + respostas -->
+        <div class="col-lg-8">
+
+          <section class="painel">
+            <h2 class="painel-titulo">Mapa de oportunidades</h2>
+            <div id="mapa" aria-label="Mapa dos bairros de Ponta Grossa"></div>
+            <div class="legenda">
+              <span><i style="background: var(--alto)"></i>Espaço para crescer</span>
+              <span><i style="background: var(--medio)"></i>Equilibrado</span>
+              <span><i style="background: var(--baixo)"></i>Saturado</span>
+              <span><i style="background: #929292"></i>Sem dados validados</span>
+            </div>
+          </section>
+
+          <section class="painel mt-4" aria-live="polite">
+            <h2 class="painel-titulo">Respostas</h2>
+            <p id="resposta" class="mb-0">Faça uma pergunta ou toque em um bairro do mapa.</p>
+          </section>
+
+        </div>
+
+        <!-- COLUNA DIREITA: KPIs e análises (altura total) -->
+        <div class="col-lg-4">
+         <aside class="painel-hero" aria-live="polite">
+
+  <!-- 1º: Bairro selecionado (o que você clicou no mapa) -->
+  <section class="an-bloco an-bloco-sel">
+    <h3 class="an-sub">Bairro selecionado</h3>
+    <div id="kpis" class="row g-2"></div>
+  </section>
+
+  <!-- 2º: Melhor bairro para o seu negócio -->
+  <div class="an-cabeca">
+    <span class="selo-exemplo">Análise ao vivo</span>
+    <h2 class="painel-hero-titulo">Melhor bairro para <span id="an-setor"></span></h2>
+  </div>
+
+  <section class="an-bloco">
+    <div class="an-topo">
+      <div id="an-anel" class="anel"><b id="an-nota">0</b></div>
+      <div>
+        <strong id="an-bairro" class="an-bairro"></strong>
+        <span id="an-nivel" class="an-nivel"></span>
+        <small id="an-frase" class="d-block"></small>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3º: números e barra -->
+  <section class="an-bloco">
+    <h3 class="an-sub">Números do bairro</h3>
+    <div id="an-stats" class="row g-2"></div>
+
+    <div class="an-barra-bloco">
+      <div class="an-barra-texto">
+        <span>Habitantes por concorrente</span>
+        <span id="an-barra-valor"></span>
+      </div>
+      <div class="an-barra"><i id="an-barra-fill"></i><u id="an-barra-ideal"></u></div>
+      <small class="an-barra-legenda">A marca branca é o mínimo saudável. Passou dela, há espaço para você.</small>
+    </div>
+  </section>
+
+  <!-- 4º: como ler a nota -->
+  <section class="an-bloco">
+    <h3 class="an-sub">Como ler a nota</h3>
+    <div class="an-leitura">
+      <div><b class="v">70+</b><span>Espaço para investir</span></div>
+      <div><b class="l">45–69</b><span>Equilibrado</span></div>
+      <div><b class="r">&lt;45</b><span>Saturado</span></div>
+    </div>
+  </section>
+
+  <!-- 5º: ranking -->
+  <section class="an-bloco">
+    <h3 class="an-sub">Ranking do setor</h3>
+    <ul id="ranking" class="list-unstyled mb-0"></ul>
+  </section>
+
+</aside>
+        </div>
+
+      </div>
+
+      <p class="nota">
+        Protótipo: a população total de Ponta Grossa vem do IBGE (Censo 2022): 358.371 habitantes.
+        População, concorrentes e poder de compra são dados demonstrativos; nas novas áreas, a concorrência é simulada para apresentar os filtros. A nota combina demanda e aderência ao perfil escolhido. Os círculos do mapa indicam a região aproximada de cada bairro.
+      </p>
+    </div>
+  </main>
+
+  <!-- ===== MENU LATERAL DO PERFIL (lado direito) ===== -->
+  <div class="offcanvas offcanvas-end menu-perfil" tabindex="-1"
+       id="menuPerfil" aria-labelledby="menuPerfilTitulo">
+
+    <div class="offcanvas-header">
+      <h2 class="offcanvas-title h5" id="menuPerfilTitulo">Meu perfil</h2>
+      <button type="button" class="btn-close btn-close-white"
+              data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
+    </div>
+
+    <div class="offcanvas-body">
+
+      <div class="perfil-card">
+        <span class="avatar avatar-grande">S</span>
+        <div>
+          <strong>Sicília</strong>
+          <small>sicilianazareth03@gmail.com</small>
+        </div>
+      </div>
+
+      <nav class="menu-lista">
+        <a href="#">Minhas consultas</a>
+        <a href="#">Negócios salvos</a>
+        <a href="#">Relatórios</a>
+        <a href="#">Configurações</a>
+        <a href="#" class="sair">Sair</a>
+      </nav>
+
+    </div>   <!-- fecha offcanvas-body -->
+  </div>     <!-- fecha offcanvas -->
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- MUDANÇA 6: JavaScript do Leaflet ANTES do app.js (a ordem importa) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/bairros.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
